@@ -16,11 +16,25 @@ fi
 # Conversion en secondes pour le sleep
 FREQUENCY_SEC=$((FREQUENCY_MIN * 60))
 
-# --- 2. Récupération MQTT ---
-MQTT_HOST=$(bashio::services 'mqtt' 'host')
-MQTT_PORT=$(bashio::services 'mqtt' 'port')
-MQTT_USERNAME=$(bashio::services 'mqtt' 'username')
-MQTT_PASSWORD=$(bashio::services 'mqtt' 'password')
+# --- 2. Récupération MQTT (Sécurisée) ---
+# C'est ici que l'erreur "Forbidden" se produisait. On vérifie d'abord.
+if bashio::services.available "mqtt"; then
+    bashio::log.info "✅ Service MQTT détecté via l'API Supervisor."
+    MQTT_HOST=$(bashio::services 'mqtt' 'host')
+    MQTT_PORT=$(bashio::services 'mqtt' 'port')
+    MQTT_USERNAME=$(bashio::services 'mqtt' 'username')
+    MQTT_PASSWORD=$(bashio::services 'mqtt' 'password')
+else
+    bashio::log.warning "⚠️  ATTENTION : Service MQTT non détecté par l'API Supervisor !"
+    bashio::log.warning "👉 Vérifiez que 'Mosquitto Broker' est bien installé et démarré sur cette machine."
+    bashio::log.warning "👉 On tente d'utiliser 'core-mosquitto' par défaut..."
+    
+    # Valeurs de repli pour essayer de fonctionner quand même
+    MQTT_HOST="core-mosquitto"
+    MQTT_PORT=1883
+    MQTT_USERNAME=""
+    MQTT_PASSWORD=""
+fi
 
 # --- 3. Export des variables pour Python ---
 export LOGIN
@@ -35,14 +49,30 @@ export MQTT_RETAIN="true"
 bashio::log.info "ℹ️  Configuration chargée :"
 bashio::log.info "   - Topic MQTT : $MQTT_TOPIC_BASE"
 bashio::log.info "   - Fréquence  : Toutes les $FREQUENCY_MIN minutes"
+bashio::log.info "   - Cible MQTT : $MQTT_HOST:$MQTT_PORT"
 
 # --- 4. Boucle d'exécution infinie ---
 while true; do
     bashio::log.info "▶️  Lancement du scraping..."
     
+    # Recherche automatique du script Python (pour éviter l'erreur 'File not found')
+    if [ -f "/ileo_scraper/main.py" ]; then
+        SCRIPT_PATH="/ileo_scraper/main.py"
+    elif [ -f "/scraper/main.py" ]; then
+        SCRIPT_PATH="/scraper/main.py"
+    else
+        # Fallback au cas où (souvent utilisé dans les Dockerfiles simples)
+        SCRIPT_PATH="/main.py"
+    fi
+    
+    if [ ! -f "$SCRIPT_PATH" ]; then
+        bashio::log.error "❌ CRITIQUE : Impossible de trouver le fichier main.py !"
+        bashio::log.error "   Cherché dans : /ileo_scraper, /scraper et /"
+        exit 1
+    fi
+
     # Lancement du script python
-    # On capture la sortie pour voir les erreurs dans les logs
-    python3 /scraper/main.py
+    python3 "$SCRIPT_PATH"
     
     EXIT_CODE=$?
     
