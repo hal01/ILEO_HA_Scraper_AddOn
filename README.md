@@ -6,7 +6,7 @@ C'est du partage de code, en etant ma premiere publication/ utilisation de Githu
 Les différences Vs le docker : 
 
 ## Installation
-Comme un addon HACS "classique"
+Comme un addon custom, besoin d'ajouter le depot pour pouvoir installer l'add-on
 1/ Paramètres > Modules complémentaires > Boutique de modules complémentaires.
 2/ Trois petits points (en haut à droite) > Dépôts (Repositories).
 3/ Coller l'URL de votre dépôt GitHub.
