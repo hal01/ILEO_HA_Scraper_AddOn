@@ -1,5 +1,5 @@
 name: "ILEO Scraper"
-version: "1.13" # On passe en 1.13 pour forcer HA à voir un changement
+version: "1.14" # role manager sur hass.io
 slug: "ileo_scraper"
 description: "Scraper de consommation d'eau ILEO avec envoi MQTT"
 url: "https://github.com/hal01/ILEO_HA_Scraper_AddOn"
@@ -11,7 +11,7 @@ arch:
 startup: application
 init: false
 hassio_api: true
-hassio_role: default
+hassio_role: manager
 
 # Note : build_from est souvent géré directement dans le Dockerfile
 # Si vous avez un Dockerfile, vous pouvez supprimer ces lignes build_from ci-dessous
